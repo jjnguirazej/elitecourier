@@ -1,0 +1,18 @@
+#footer{
+    background:#333333;
+    color:#ffffff;
+    text-align:center;
+    padding:30px;
+    margin-top:30px;
+}
+
+.input-group-addon {
+    min-width:200px;
+    text-align:left;
+}
+
+.btn-xl {
+    padding: 10px 20px;
+    border-radius: 10px;
+    width:30%;
+}
