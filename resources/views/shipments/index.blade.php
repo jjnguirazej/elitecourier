@@ -8,7 +8,7 @@
 <strong>Filter Options: </strong>
 <input type="checkbox" autocomplete="off" onchange="checkfilter(this.checked);"/>
 <div id="filteroptions" style="display: none ;">
-  {!! Form::open(['action' => 'TxnsController@getShipments', 'method' => 'POST']) !!}
+  {!! Form::open(['action' => 'TxnsController@getShipments', 'method' => 'GET']) !!}
 
     <table class="table" width="100%" table-layout="fixed">
       <tbody>
@@ -106,6 +106,7 @@
         </tr>
           @endforeach
       </table>
+      {{ $txns->appends(request()->input())->links() }}
 @else
   <p>No Transactions To Display</p>
 @endif

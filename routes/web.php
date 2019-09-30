@@ -75,10 +75,10 @@ Route::group(['middleware' => 'auth'] , function () {
             'as' => 'shipments.index'
         ]);
 
-        Route::post('/shipments', [
-            'uses' => 'TxnsController@getShipments',
-            'as' => 'shipments.index'
-        ]);
+        // Route::post('/shipments', [
+        //     'uses' => 'TxnsController@getShipments',
+        //     'as' => 'shipments.index'
+        // ]);
 
         Route::get('/shipment/{txn}/edit', [
             'uses' => 'TxnsController@edit' , 

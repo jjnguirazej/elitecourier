@@ -540,6 +540,7 @@ class UsersController extends Controller
         }
         $user->phone = $request->input('phone');
         $user->email = $request->input('email');
+        $user->status = $request->input('status');
         if ($station_id != NULL) {
             $user->station_id = $station_id;
         }

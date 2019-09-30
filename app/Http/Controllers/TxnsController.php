@@ -616,6 +616,7 @@ class TxnsController extends Controller
         $parent_company_id = Company::select('parent_company_id')->where('id', '=', $company_id)->pluck('parent_company_id')->first();
         $company_details = Company::where('id', '=', $company_id)->get();
         $curr_date = date('Y-m-d');
+        $last_60_date = date('Y-m-d', strtotime('-60 days'));
         
         $parcel_status = ParcelStatus::pluck('name', 'id')->all();
         // $clerks = User::where(function($q) { $q->where('usertype','=','cusclerk')->orWhere('usertype','=','cusadmin'); })->where('company_id', '=', $company_id)->pluck('fullname', 'id')->all();
@@ -639,112 +640,115 @@ class TxnsController extends Controller
         $sender_company_id = $request->input('sender_company_id');
         $rider_id = $request->input('rider_id');
         
-        if ($request->isMethod('POST')){
-            $txns = Txn::where('company_id', '=', $company_id);
-            $tot_coll = Txn::select('company_id', DB::raw('sum(price) as tot_coll'))->where('company_id', '=', $company_id);
+        $txns = Txn::where('company_id', '=', $company_id)->orderBy('id','desc');
+        $tot_coll = Txn::select('company_id', DB::raw('sum(price) as tot_coll'))->where('company_id', '=', $company_id);
 
-            if ($awb_num != NULL){
-                $txns = $txns->where('awb_num','like','%'.$awb_num.'%');
-                $tot_coll = $tot_coll->where('awb_num','like','%'.$awb_num.'%');
-            }
-            // if ($origin_id != NULL){
-            //     $txns = $txns->where('origin_id','=', $origin_id);
-            //     $tot_coll = $tot_coll->where('origin_id','=', $origin_id);
-            // }
-            // if ($dest_id != NULL){
-            //     $txns = $txns->where('dest_id','=', $dest_id);
-            //     $tot_coll = $tot_coll->where('dest_id','=', $dest_id);
-            // }
-            if ($sender_name != NULL){
-                $txns = $txns->where('sender_name','like','%'.$sender_name.'%');
-                $tot_coll = $tot_coll->where('sender_name','like','%'.$sender_name.'%');
-            }
-            if ($receiver_name != NULL){
-                $txns = $txns->where('receiver_name','like','%'.$receiver_name.'%');
-                $tot_coll = $tot_coll->where('receiver_name','like','%'.$receiver_name.'%');
-            }
-            if ($parcel_status_id != NULL){
-                $txns = $txns->where('parcel_status_id','=', $parcel_status_id);
-                $tot_coll = $tot_coll->where('parcel_status_id','=', $parcel_status_id);
-            }
-            if ($first_date != NULL){
-                if ($last_date != NULL){
-                    $txns = $txns->where(DB::raw('date(created_at)'), '<=', $last_date)->where(DB::raw('date(created_at)'),'>=',$first_date);
-                    $tot_coll = $tot_coll->where(DB::raw('date(created_at)'), '<=', $last_date)->where(DB::raw('date(created_at)'),'>=',$first_date);
-                } 
-                else{
-                    $txns = $txns->where(DB::raw('date(created_at)'), '=', $first_date);
-                    $tot_coll = $tot_coll->where(DB::raw('date(created_at)'), '=', $first_date);
-                }
-            }
-            if ($invoiced != NULL){
-                $txns = $txns->where('invoiced','=', $invoiced);
-                $tot_coll = $tot_coll->where('invoiced','=', $invoiced);      
-            }
-            if ($rider_id != NULL){
-                $txns = $txns->where('driver_id','=', $rider_id);
-                $tot_coll = $tot_coll->where('driver_id','=', $rider_id);
-            }
-            if ($sender_company_id != NULL){
-                $txns = $txns->where('sender_company_id','=', $sender_company_id);
-                $tot_coll = $tot_coll->where('sender_company_id','=', $sender_company_id);
-            }
-            // if ($clerk_id != NULL){
-            //     $txns = $txns->where('clerk_id','=', $clerk_id);
-            //     $tot_coll = $tot_coll->where('clerk_id','=', $clerk_id);
-            // }
-
-            $tot_count = $txns->count();
-            
-            $tot_coll = $tot_coll->groupBy('company_id')->pluck('tot_coll')->first();
-
-            if ($tot_coll == NULL) {
-                $tot_coll = 0;
-            }
-
-            //setting defaults for options
-            if ($awb_num == NULL){
-                $awb_num = 'All';
-            }
-            if ($sender_company_id == '0') {
-                $sender_company_name = 'Others';
+        if ($awb_num != NULL){
+            $txns = $txns->where('awb_num','like','%'.$awb_num.'%');
+            $tot_coll = $tot_coll->where('awb_num','like','%'.$awb_num.'%');
+        }
+        // if ($origin_id != NULL){
+        //     $txns = $txns->where('origin_id','=', $origin_id);
+        //     $tot_coll = $tot_coll->where('origin_id','=', $origin_id);
+        // }
+        // if ($dest_id != NULL){
+        //     $txns = $txns->where('dest_id','=', $dest_id);
+        //     $tot_coll = $tot_coll->where('dest_id','=', $dest_id);
+        // }
+        if ($sender_name != NULL){
+            $txns = $txns->where('sender_name','like','%'.$sender_name.'%');
+            $tot_coll = $tot_coll->where('sender_name','like','%'.$sender_name.'%');
+        }
+        if ($receiver_name != NULL){
+            $txns = $txns->where('receiver_name','like','%'.$receiver_name.'%');
+            $tot_coll = $tot_coll->where('receiver_name','like','%'.$receiver_name.'%');
+        }
+        if ($parcel_status_id != NULL){
+            $txns = $txns->where('parcel_status_id','=', $parcel_status_id);
+            $tot_coll = $tot_coll->where('parcel_status_id','=', $parcel_status_id);
+        }
+        if ($first_date != NULL){
+            if ($last_date != NULL){
+                $txns = $txns->where(DB::raw('date(created_at)'), '<=', $last_date)->where(DB::raw('date(created_at)'),'>=',$first_date);
+                $tot_coll = $tot_coll->where(DB::raw('date(created_at)'), '<=', $last_date)->where(DB::raw('date(created_at)'),'>=',$first_date);
             } 
-            else if ($sender_company_id != NULL) {
-                $sender_company_name = Company::where('id', '=', $sender_company_id)->pluck('name')->first();
-            } 
-            else {
-                $sender_company_name = 'All';
+            else{
+                $txns = $txns->where(DB::raw('date(created_at)'), '=', $first_date);
+                $tot_coll = $tot_coll->where(DB::raw('date(created_at)'), '=', $first_date);
             }
-            if ($rider_id != NULL) {
-                $rider_name = User::where('id', '=', $rider_id)->pluck('fullname')->first();
-            } 
-            else {
-                $rider_name = 'All';
-            }
-            if ($parcel_status_id != NULL) {
-                $parcel_status_name = ParcelStatus::where('id', '=', $parcel_status_id)->pluck('name')->first();
-            } 
-            else {
-                $parcel_status_name = 'All';
-            }
-            
-            if ($request->submitBtn == 'CreatePDF') {
-                $txns = $txns->orderBy('id','desc')->limit(300)->get();
-                $pdf = PDF::loadView('pdf.shipments', ['txns' => $txns, 'company_details' => $company_details, 'curr_date' => $curr_date, 'tot_coll' => $tot_coll, 'tot_count' => $tot_count, 'awb_num' => $awb_num, 'sender_company_name' => $sender_company_name, 'rider_name' => $rider_name, 'parcel_status_name' => $parcel_status_name, 'first_date' => $first_date, 'last_date' => $last_date]);
-                $pdf->setPaper('A4', 'landscape');
-                return $pdf->stream('shipments.pdf');
-            }
-
-            $txns = $txns->orderBy('id','desc')->get();
         }
         else {
-            $tot_count = Txn::where('company_id','=',$company_id)->count();
-            $txns = Txn::where('company_id','=',$company_id)->orderBy('id','desc')->get();
-            $tot_coll = Txn::select('company_id', DB::raw('sum(price) as tot_coll'))->where('company_id', '=', $company_id)->groupBy('company_id')->pluck('tot_coll')->first();
-            if ($tot_coll == NULL) {
-                $tot_coll = 0;
-            }
+            $txns = $txns->where(DB::raw('date(txns.created_at)'),'>=',$last_60_date);
+            $tot_coll = $tot_coll->where(DB::raw('date(txns.created_at)'),'>=',$last_60_date);
         }
+        if ($invoiced != NULL){
+            $txns = $txns->where('invoiced','=', $invoiced);
+            $tot_coll = $tot_coll->where('invoiced','=', $invoiced);      
+        }
+        if ($rider_id != NULL){
+            $txns = $txns->where('driver_id','=', $rider_id);
+            $tot_coll = $tot_coll->where('driver_id','=', $rider_id);
+        }
+        if ($sender_company_id != NULL){
+            $txns = $txns->where('sender_company_id','=', $sender_company_id);
+            $tot_coll = $tot_coll->where('sender_company_id','=', $sender_company_id);
+        }
+        // if ($clerk_id != NULL){
+        //     $txns = $txns->where('clerk_id','=', $clerk_id);
+        //     $tot_coll = $tot_coll->where('clerk_id','=', $clerk_id);
+        // }
+
+        $tot_count = $txns->count();
+        
+        $tot_coll = $tot_coll->groupBy('company_id')->pluck('tot_coll')->first();
+
+        if ($tot_coll == NULL) {
+            $tot_coll = 0;
+        }
+
+        //setting defaults for options
+        if ($awb_num == NULL){
+            $awb_num = 'All';
+        }
+        if ($sender_company_id == '0') {
+            $sender_company_name = 'Others';
+        } 
+        else if ($sender_company_id != NULL) {
+            $sender_company_name = Company::where('id', '=', $sender_company_id)->pluck('name')->first();
+        } 
+        else {
+            $sender_company_name = 'All';
+        }
+        if ($rider_id != NULL) {
+            $rider_name = User::where('id', '=', $rider_id)->pluck('fullname')->first();
+        } 
+        else {
+            $rider_name = 'All';
+        }
+        if ($parcel_status_id != NULL) {
+            $parcel_status_name = ParcelStatus::where('id', '=', $parcel_status_id)->pluck('name')->first();
+        } 
+        else {
+            $parcel_status_name = 'All';
+        }
+        
+        $tot_count = $txns->count();
+
+        if ($tot_coll == NULL) {
+            $tot_coll = 0;
+        }
+        else {
+            $tot_coll = $tot_coll->pluck('tot_coll')->first();
+        }
+
+        if ($request->submitBtn == 'CreatePDF') {
+            $txns = $txns->limit(500)->get();
+            $pdf = PDF::loadView('pdf.shipments', ['txns' => $txns, 'company_details' => $company_details, 'curr_date' => $curr_date, 'tot_coll' => $tot_coll, 'tot_count' => $tot_count, 'awb_num' => $awb_num, 'sender_company_name' => $sender_company_name, 'rider_name' => $rider_name, 'parcel_status_name' => $parcel_status_name, 'first_date' => $first_date, 'last_date' => $last_date]);
+            $pdf->setPaper('A4', 'landscape');
+            return $pdf->stream('shipments.pdf');
+        }
+
+        $txns = $txns->paginate(30);
 
         return view('shipments.index', ['txns' => $txns, 'zones' => $zones,  'parcel_status' => $parcel_status, 'tot_coll' => $tot_coll, 'tot_count' => $tot_count, 'cuscompanies' => $cuscompanies, 'riders' => $riders]);
     }
@@ -752,7 +756,7 @@ class TxnsController extends Controller
     public function getbookedShipments(Request $request)
     {
         $company_id = Auth::user()->company_id;
-        $riders = User::where('company_id', '=', $company_id)->where('usertype', '=', 'driver')->pluck('fullname','id')->all();
+        $riders = User::where('company_id', '=', $company_id)->where('usertype', '=', 'driver')->where('status', '=', '1')->pluck('fullname','id')->all();
         $parcel_status_id = $request->input('parcel_status_id');
         if ($request->isMethod('POST')){
             $txns = Txn::where('company_id', '=', $company_id);
